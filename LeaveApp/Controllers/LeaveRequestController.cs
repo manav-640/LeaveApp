@@ -12,8 +12,7 @@ namespace LeaveApp.Controllers
         LeaveContext objLeaveCtxt = new LeaveContext();
 
         /* Name: Manav, Type: Employee 
-        * its temporary 
-        */
+        * its temporary */
         int iEmpId = 2;
 
         // GET: LeaveRequest
