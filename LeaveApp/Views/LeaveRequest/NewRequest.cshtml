@@ -1,0 +1,585 @@
+﻿@model LeaveApp.Models.LeaveDetails
+@{
+    ViewBag.Title = "Request";
+}
+
+<head>
+    <title>Bootstrap Example</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        .form-control[disabled],
+        .form-control[readonly] {
+            color: #0a0a0a !important;
+        }
+
+        .tr-height {
+            height: 40px;
+        }
+    </style>
+    <script>
+        $(document).ready(function ()
+        {
+            //$("#btnAnnual").click(
+            //function(objCtrl)
+            ////function ShowRequestDtl(objCtrl)
+            //{
+
+            //}
+            //);
+        });
+
+        function ShowRequestDtl(objCtrl)
+        {
+            var iLeaveTypeId = $(objCtrl).attr("leavetypeid");
+
+            $.ajax({
+                method: "GET",
+                dataType: "json",
+                url: '/LeaveRequest/GetEmpLeaveDtl',
+                data: { LeaveTypeId: iLeaveTypeId },
+                success: function (data)
+                {
+                    if (data.EmpDetails != null) {
+                        $("#hdnRegEmpId").val(data.EmpDetails.EmpId);
+                        $("#lblRegEmpName").text(data.EmpDetails.EmpName);
+                        //$("#").val(data.EmpDetails.EmpType);
+                        //$("#").val(data.EmpDetails.Dept);
+                        $("#txtEmail").val(data.EmpDetails.Email);
+                        $("#txtMobileNo").val(data.EmpDetails.PhoneNo);
+                        $("#txtAddress").val(data.EmpDetails.Address);
+                        $("#hdnRegManagerId").val(data.EmpDetails.ManagerId);
+                        $("#lblRegManagerName").text(data.EmpDetails.ManagerName);
+                        $("#lblRegManagerDesig").text(data.EmpDetails.ManagerEmpType);
+                    }
+
+                    if (data.LeaveTypeMst != null) {
+                        $("#hdnRegLeaveTypeId").val(data.LeaveTypeMst.LeaveTypeId);
+                        $("#txtRegLeaveType").val(data.LeaveTypeMst.LeaveType);
+                        //$("#lblRegApplicableLeave").text(data.LeaveTypeMst.NoOfApplicableLeaves);
+                        $("#txtRegNoOfLeave").val((1 + data.LeaveTypeMst.LeaveRequested) + "/" + data.LeaveTypeMst.NoOfApplicableLeaves);
+
+                        if ((data.LeaveTypeMst.LeaveRequested + 1) > data.LeaveTypeMst.NoOfApplicableLeaves) {
+                            alert(data.LeaveTypeMst.LeaveType + " Leaves not available !!");
+                            return false;
+                        }
+                    }
+                },
+                error: function (req, status, errorMessage)
+                {
+                    alert("Error while getting Employee details: " + errorMessage);
+                }
+            });
+        }
+
+        function CheckValidations()
+        {
+            if ($("#txtStartDate").val().trim() == "") {
+                alert("Please select Start Date.");
+                return false;
+            }
+
+            if ($("#txtEndDate").val().trim() == "") {
+                alert("Please select End Date.");
+                return false;
+            }
+
+            if ($("#txtReason").val().trim() == "") {
+                alert("Please enter Reason.");
+                return false;
+            }
+        }
+
+        //$("#btnReview").click(
+        function ViewLeaveRequest(objCtrl)
+        {
+            var iLeaveRequestid = $(objCtrl).attr("requestid");
+            var btnHref = $("#btnApprove").attr("href");
+            btnHref = btnHref.replace("LeaveRequestId=0", "LeaveRequestId=" + iLeaveRequestid);
+            $("#btnApprove").attr("href", btnHref);
+            btnHref = $("#btnReject").attr("href");
+            btnHref = btnHref.replace("LeaveRequestId=0", "LeaveRequestId=" + iLeaveRequestid);
+            $("#btnReject").attr("href", btnHref);
+
+            $.ajax({
+                method: "GET",
+                dataType: "json",
+                url: '/LeaveRequest/GetRequestLeaveDtl',
+                data: { LeaveRequestId: iLeaveRequestid },
+                success: function (data)
+                {
+                    if (data.LeaveRequestDtl != null) {
+                        $("#txtViewEmpName").val(data.LeaveRequestDtl.EmpName);
+                        $("#txtViewDays").val(data.LeaveRequestDtl.TotalDays);
+                        $("#txtViewStartDate").val(data.LeaveRequestDtl.StartDate);
+                        $("#txtViewEndDate").val(data.LeaveRequestDtl.EndDate);
+                    }
+
+                    if (data.LeaveTypeMst != null) {
+                        $("#txtViewRequestFor").val(data.LeaveTypeMst.LeaveType + " (" + data.LeaveTypeMst.LeaveRequested + "/" + data.LeaveTypeMst.NoOfApplicableLeaves + ")");
+                    }
+                },
+                error: function (req, status, errorMessage)
+                {
+                    debugger;
+                    alert("Error while getting Leave Request details: " + errorMessage);
+                }
+            });
+        }
+        //);
+    </script>
+</head>
+
+<!-- START BREADCRUMB -->
+<ul class="breadcrumb">
+    <li><a href="#">Link</a></li>
+    <li class="active">Active</li>
+</ul>
+<!-- END BREADCRUMB -->
+
+<div class="page-title">
+    <h2><span class="fa fa-arrow-circle-o-left"></span> Index Page </h2>
+</div>
+
+<!-- PAGE CONTENT WRAPPER -->
+<div class="page-content-wrap">
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel panel-default">
+                <!-- PAGE DESIGN -->
+                <div class="panel panel-default tabs">
+                    <ul class="nav nav-tabs">
+                        <li class="active"><a href="#tabEmployee" data-toggle="tab" aria-expanded="true">Employee</a></li>
+                        <li class=""><a href="#tabManager" data-toggle="tab" aria-expanded="false">Manager</a></li>
+                    </ul>
+                    <div class="panel-body tab-content">
+                        <div class="tab-pane active" id="tabEmployee">
+                            <p>
+                                @foreach (var item in Model.Lst_LeaveTypeMst)
+                                {
+                                    switch (item.LeaveType.Trim())
+                                    {
+                                        case "Annual":
+                                            {
+                                                <div class="row">
+                                                    <div class="col-md-4">
+                                                        <input type="button" id="btnAnnual" leavetypeid="@item.LeaveTypeId" value="@item.LeaveType (@item.LeaveRequested/@item.NoOfApplicableLeaves)" class="btn btn-primary btn-block" onclick="ShowRequestDtl(this);" data-toggle="modal" data-target="#RequestModal" /><br />
+                                                    </div>
+                                                    <div class="col-md-8">
+                                                    </div>
+                                                </div>
+                                            }
+                                            break;
+                                        case "Marriage":
+                                            {
+                                                <div class="row">
+                                                    <div class="col-md-4">
+                                                        <input type="button" id="btnMarriage" leavetypeid="@item.LeaveTypeId" value="@item.LeaveType (@item.LeaveRequested/@item.NoOfApplicableLeaves)" class="btn btn-primary btn-block" onclick="ShowRequestDtl(this);" data-toggle="modal" data-target="#RequestModal" /><br />
+                                                    </div>
+                                                    <div class="col-md-8">
+                                                    </div>
+                                                </div>
+                                            }
+                                            break;
+                                        case "Casual":
+                                            {
+                                                <div class="row">
+                                                    <div class="col-md-4">
+                                                        <input type="button" id="btnCasual" leavetypeid="@item.LeaveTypeId" value="@item.LeaveType (@item.LeaveRequested/@item.NoOfApplicableLeaves)" class="btn btn-primary btn-block" onclick="ShowRequestDtl(this);" data-toggle="modal" data-target="#RequestModal" /><br />
+                                                    </div>
+                                                    <div class="col-md-8">
+                                                    </div>
+                                                </div>
+                                            }
+                                            break;
+                                    }
+                                }
+                            </p>
+                            <div>
+                                @if (Model.Lst_LeaveRequestDtl.Count > 0)
+                                {
+                                    <table class="table table-bordered">
+                                        <thead>
+                                            <tr>
+                                                <th>
+                                                    @Html.DisplayNameFor(model => model.Lst_LeaveRequestDtl[0].RequestId)
+                                                </th>
+                                                <th>
+                                                    @Html.DisplayNameFor(model => model.Lst_LeaveRequestDtl[0].EmpId)
+                                                </th>
+                                                <th>
+                                                    @Html.DisplayNameFor(model => model.Lst_LeaveRequestDtl[0].ManagerName)
+                                                </th>
+                                                <th>
+                                                    @Html.DisplayNameFor(model => model.Lst_LeaveRequestDtl[0].LeaveType)
+                                                </th>
+                                                <th>
+                                                    @Html.DisplayNameFor(model => model.Lst_LeaveRequestDtl[0].RequestDate)
+                                                </th>
+                                                <th>
+                                                    @Html.DisplayNameFor(model => model.Lst_LeaveRequestDtl[0].StartDate)
+                                                </th>
+                                                <th>
+                                                    @Html.DisplayNameFor(model => model.Lst_LeaveRequestDtl[0].EndDate)
+                                                </th>
+                                                <th>
+                                                    @Html.DisplayNameFor(model => model.Lst_LeaveRequestDtl[0].TotalDays)
+                                                </th>
+                                                <th>
+                                                    @Html.DisplayNameFor(model => model.Lst_LeaveRequestDtl[0].Status)
+                                                </th>
+                                                <th>
+                                                    @Html.DisplayNameFor(model => model.Lst_LeaveRequestDtl[0].Reason)
+                                                </th>
+                                                <th>
+                                                    @Html.DisplayNameFor(model => model.Lst_LeaveRequestDtl[0].AttachmentPath)
+                                                </th>
+                                                <th></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var item in Model.Lst_LeaveRequestDtl)
+                                            {
+                                                <tr>
+                                                    <td>
+                                                        @Html.DisplayFor(modelItem => item.RequestId)
+                                                    </td>
+                                                    <td>
+                                                        @Html.DisplayFor(modelItem => item.EmpId)
+                                                    </td>
+                                                    <td>
+                                                        @Html.DisplayFor(modelItem => item.ManagerName)
+                                                    </td>
+                                                    <td>
+                                                        @Html.DisplayFor(modelItem => item.LeaveType)
+                                                    </td>
+                                                    <td>
+                                                        @Html.DisplayFor(modelItem => item.RequestDate)
+                                                    </td>
+                                                    <td>
+                                                        @Html.DisplayFor(modelItem => item.StartDate)
+                                                    </td>
+                                                    <td>
+                                                        @Html.DisplayFor(modelItem => item.EndDate)
+                                                    </td>
+                                                    <td>
+                                                        @Html.DisplayFor(modelItem => item.TotalDays)
+                                                    </td>
+                                                    <td>
+                                                        @Html.DisplayFor(modelItem => item.Status)
+                                                    </td>
+                                                    <td>
+                                                        @Html.DisplayFor(modelItem => item.Reason)
+                                                    </td>
+                                                    <td>
+                                                        @Html.DisplayFor(modelItem => item.AttachmentPath)
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                }
+                            </div>
+                        </div>
+                        <div class="tab-pane" id="tabManager">
+                            <h4>Leaves Pending for Approval</h4>
+                            <p>
+                                <div>
+                                    @if (Model.Lst_LeavePendingDtl.Count > 0)
+                                    {
+                                        <table class="table table-bordered">
+                                            <thead>
+                                                <tr>
+                                                    <th>
+                                                        @Html.DisplayNameFor(model => model.Lst_LeavePendingDtl[0].RequestId)
+                                                    </th>
+                                                    <th>
+                                                        @Html.DisplayNameFor(model => model.Lst_LeavePendingDtl[0].EmpId)
+                                                    </th>
+                                                    <th>
+                                                        @Html.DisplayNameFor(model => model.Lst_LeavePendingDtl[0].EmpName)
+                                                    </th>
+                                                    <th>
+                                                        @Html.DisplayNameFor(model => model.Lst_LeavePendingDtl[0].ManagerName)
+                                                    </th>
+                                                    <th>
+                                                        @Html.DisplayNameFor(model => model.Lst_LeavePendingDtl[0].LeaveType)
+                                                    </th>
+                                                    <th>
+                                                        @Html.DisplayNameFor(model => model.Lst_LeavePendingDtl[0].RequestDate)
+                                                    </th>
+                                                    <th>
+                                                        @Html.DisplayNameFor(model => model.Lst_LeavePendingDtl[0].StartDate)
+                                                    </th>
+                                                    <th>
+                                                        @Html.DisplayNameFor(model => model.Lst_LeavePendingDtl[0].EndDate)
+                                                    </th>
+                                                    <th>
+                                                        @Html.DisplayNameFor(model => model.Lst_LeavePendingDtl[0].TotalDays)
+                                                    </th>
+                                                    <th>
+                                                        @Html.DisplayNameFor(model => model.Lst_LeavePendingDtl[0].Status)
+                                                    </th>
+                                                    <th>
+                                                        @Html.DisplayNameFor(model => model.Lst_LeavePendingDtl[0].Reason)
+                                                    </th>
+                                                    <th>
+                                                        @Html.DisplayNameFor(model => model.Lst_LeavePendingDtl[0].AttachmentPath)
+                                                    </th>
+                                                    <th>Review</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var item in Model.Lst_LeavePendingDtl)
+                                                {
+                                                    <tr>
+                                                        <td>
+                                                            @Html.DisplayFor(modelItem => item.RequestId)
+                                                        </td>
+                                                        <td>
+                                                            @Html.DisplayFor(modelItem => item.EmpId)
+                                                        </td>
+                                                        <td>
+                                                            @Html.DisplayFor(modelItem => item.EmpName)
+                                                        </td>
+                                                        <td>
+                                                            @Html.DisplayFor(modelItem => item.ManagerName)
+                                                        </td>
+                                                        <td>
+                                                            @Html.DisplayFor(modelItem => item.LeaveType)
+                                                        </td>
+                                                        <td>
+                                                            @Html.DisplayFor(modelItem => item.RequestDate)
+                                                        </td>
+                                                        <td>
+                                                            @Html.DisplayFor(modelItem => item.StartDate)
+                                                        </td>
+                                                        <td>
+                                                            @Html.DisplayFor(modelItem => item.EndDate)
+                                                        </td>
+                                                        <td>
+                                                            @Html.DisplayFor(modelItem => item.TotalDays)
+                                                        </td>
+                                                        <td>
+                                                            @Html.DisplayFor(modelItem => item.Status)
+                                                        </td>
+                                                        <td>
+                                                            @Html.DisplayFor(modelItem => item.Reason)
+                                                        </td>
+                                                        <td>
+                                                            @Html.DisplayFor(modelItem => item.AttachmentPath)
+                                                        </td>
+                                                        <td>
+                                                            <input type="button" id="btnReview" requestid="@item.RequestId" value="Review" class="btn-primary" onclick="ViewLeaveRequest(this);" data-toggle="modal" data-target="#ApproveModal" /><br />
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    }
+                                </div>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                @*New Request Modal Popup*@
+                <div class="modal fade" id="RequestModal" role="dialog">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <form method="post" action="~/LeaveRequest/RequestLeave">
+                                <div class="modal-header">
+                                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                                    <h4 class="modal-title text-center">Leave Request</h4>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="body-content">
+                                        <div class="row">
+                                            <div class="col-sm-3">
+                                                <table>
+                                                    <tr>
+                                                        <td>
+                                                            <div class="panel panel-default" style="width:66%;">
+                                                                <div class="panel-body profile">
+                                                                    <div class="profile-image">
+                                                                        <img id="imgEmp" src="~/Images/user.jpg" alt="Employee">
+                                                                    </div>
+                                                                    <div class="profile-data">
+                                                                        <div class="profile-data-name">
+                                                                            <label id="lblRegEmpName" name="RegEmpName">Manav</label>
+                                                                            <input type="hidden" id="hdnRegEmpId" name="hdnRegEmpId" />
+                                                                        </div>
+                                                                        <div class="profile-data-title">
+                                                                            <label id="lblRegEmpDesig" name="RegEmpType">Developer</label>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>
+                                                            <div class="panel panel-default" style="width:66%;">
+                                                                <div class="panel-body profile">
+                                                                    <div class="profile-image">
+                                                                        <img id="imgEmp" src="~/Images/user.jpg" alt="Manager">
+                                                                    </div>
+                                                                    <div class="profile-data">
+                                                                        <div class="profile-data-name">
+                                                                            <label id="lblRegManagerName" name="RegManagerName">Sheshagiri</label>
+                                                                            <input type="hidden" id="hdnRegManagerId" name="hdnRegManagerId" />
+                                                                        </div>
+                                                                        <div class="profile-data-title">
+                                                                            <label id="lblRegManagerDesig" name="RegMEmpType">Team Leader</label>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                            </div>
+                                            <div class="col-sm-9">
+                                                <table>
+                                                    <tr class="tr-height">
+                                                        <td width="35%">
+                                                            <label for="LeaveType">Leave Type:</label>
+                                                        </td>
+                                                        <td width="75%">
+                                                            <input type="text" class="form-control" id="txtRegLeaveType" name="ReqLeaveType" readonly="readonly" />
+                                                            <input type="hidden" id="hdnRegLeaveTypeId" name="hdnRegLeaveTypeId" />
+                                                        </td>
+                                                    </tr>
+                                                    <tr class="tr-height">
+                                                        <td><label for="Leave">Leave:</label></td>
+                                                        <td>
+                                                            <input type="text" class="form-control" id="txtRegNoOfLeave" name="RegNoOfLeave" readonly="readonly" />
+                                                            @*<label id="lblRegNoOfLeave" name="RegNoOfLeave"></label>/<label id="lblRegApplicableLeave" name="RegNoOfLeave"></label>*@
+                                                        </td>
+                                                    </tr>
+                                                    <tr class="tr-height">
+                                                        <td><label for="StartDate">Start Date:</label>  </td>
+                                                        <td>
+                                                            @*<input type="date" class="form-control" id="txtStartDate" name="txtStartDate" value="" />*@
+                                                            <input type="text" id="txtStartDate" name="txtStartDate" class="form-control datepicker">
+                                                        </td>
+                                                    </tr>
+                                                    <tr class="tr-height">
+                                                        <td><label for="EndDate">End Date:</label></td>
+                                                        <td>
+                                                            <input type="date" class="form-control" id="txtEndDate" name="txtEndDate" value="" />
+                                                        </td>
+                                                    </tr>
+                                                    <tr class="tr-height">
+                                                        <td><label for="Mobile">Mobile No:</label> </td>
+                                                        <td>
+                                                            <input type="text" class="form-control" id="txtMobileNo" name="txtMobileNo" value="" readonly="readonly" />
+                                                        </td>
+                                                    </tr>
+                                                    <tr class="tr-height">
+                                                        <td><label for="email">Email address:</label></td>
+                                                        <td>
+                                                            <input type="email" class="form-control" id="txtEmail" name="txtEmail" readonly="readonly">
+                                                        </td>
+                                                    </tr>
+                                                    <tr class="tr-height">
+                                                        <td><label for="Address">Address:</label></td>
+                                                        <td>
+                                                            <textarea class="form-control" rows="2" id="txtAddress" name="txtAddress" readonly="readonly"></textarea>
+                                                        </td>
+                                                    </tr>
+                                                    <tr class="tr-height">
+                                                        <td><label for="Reason">Reason:</label></td>
+                                                        <td>
+                                                            <textarea class="form-control" rows="2" id="txtReason" name="txtReason"></textarea>
+                                                        </td>
+                                                    </tr>
+                                                    <tr class="tr-height">
+                                                        <td><label for="Attachment">Attachment:</label></td>
+                                                        <td>
+                                                            <input type="file" id="Attachment" name="Attachment" class="form-control-file" />
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="submit" class="btn btn-success" id="btnSubmitReuqest" onclick="return CheckValidations();">Submit</button>
+                                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                @*Approve Request Modal Popup*@
+                <div class="modal fade" id="ApproveModal" role="dialog">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                                <h4 class="modal-title text-center">Leave Details</h4>
+                            </div>
+                            <div class="modal-body">
+                                <table>
+                                    <tr class="tr-height">
+                                        <td> <label for="EmpName">Employee Name:</label> &nbsp;</td>
+                                        <td>
+                                            <input type="text" class="form-control" id="txtViewEmpName" name="ViewEmpName" readonly="readonly" />
+                                        </td>
+                                    </tr>
+                                    <tr class="tr-height">
+                                        <td><label for="RequestFor">Request For:</label> </td>
+                                        <td>
+                                            <input type="text" class="form-control" id="txtViewRequestFor" name="ViewRequestFor" readonly="readonly" />
+                                        </td>
+                                    </tr>
+                                    <tr class="tr-height">
+                                        <td><label for="Days">Days:</label></td>
+                                        <td>
+                                            <input type="text" class="form-control" id="txtViewDays" name="ViewDays" readonly="readonly" />
+                                        </td>
+                                    </tr>
+                                    <tr class="tr-height">
+                                        <td><label for="SDate">Start Date:</label> </td>
+                                        <td>
+                                            <input type="text" class="form-control" id="txtViewStartDate" name="ViewStartDate" readonly="readonly" />
+                                        </td>
+                                    </tr>
+                                    <tr class="tr-height">
+                                        <td><label for="EDate">End Date:</label></td>
+                                        <td>
+                                            <input type="text" class="form-control" id="txtViewEndDate" name="ViewEndDate" readonly="readonly" />
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div class="modal-footer">
+                                @Html.ActionLink("Approve", "ApproveLeave", new { LeaveRequestId = 0, Status = 1 }, new { @class = "btn btn-success", @id = "btnApprove" })
+                                @Html.ActionLink("Reject", "ApproveLeave", new { LeaveRequestId = 0, Status = 2 }, new { @class = "btn btn-success", @id = "btnReject" })
+                                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- END PAGE DESIGN -->
+            </div>
+        </div>
+    </div>
+</div>
+<!-- THIS PAGE PLUGINS -->
+<script type='text/javascript' src='/../js/plugins/icheck/icheck.min.js'></script>
+<script type="text/javascript" src="/../js/plugins/mcustomscrollbar/jquery.mCustomScrollbar.min.js"></script>
+
+<script type="text/javascript" src="/../js/plugins/bootstrap/bootstrap-datepicker.js"></script>
+<script type="text/javascript" src="/../js/plugins/bootstrap/bootstrap-timepicker.min.js"></script>
+<script type="text/javascript" src="/../js/plugins/bootstrap/bootstrap-colorpicker.js"></script>
+<script type="text/javascript" src="/../js/plugins/bootstrap/bootstrap-file-input.js"></script>
+<script type="text/javascript" src="/../js/plugins/bootstrap/bootstrap-select.js"></script>
+@*<script type="text/javascript" src="~/js/plugins/tagsinput/jquery.tagsinput.min.js"></script>*@
+<script type="text/javascript" src="/../js/plugins/tagsinput/jquery.tagsinput.min.js"></script>
+<!-- END PAGE PLUGINS -->
+<!-- END PAGE CONTENT WRAPPER -->
