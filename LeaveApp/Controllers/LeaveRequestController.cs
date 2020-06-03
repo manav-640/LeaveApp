@@ -65,7 +65,7 @@ namespace LeaveApp.Controllers
             return Json(objLeaveCtxt.GetRequestedLeaveDetails(LeaveRequestId), JsonRequestBehavior.AllowGet);
         }
 
-        //[HttpPost]
+        //[HttpPost] hi 
         public ActionResult ApproveLeave(int LeaveRequestId, int Status)
         {
             if (objLeaveCtxt.UpdateLeaveRequestStatus(LeaveRequestId, Status) > 0)
